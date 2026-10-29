@@ -1,4 +1,4 @@
-name: ProjectJaina_Store — CI/CD
+name: ProjectJaina_Store - CI/CD
 
 on:
   push:
