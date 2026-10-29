@@ -5,7 +5,7 @@
 **AddOn:** `ProjectJaina_Store`  
 **Cliente:** World of Warcraft: Wrath of the Lich King (3.3.5a, Build 12340)  
 **Estándar:** Staff Software Engineer L9 (Claude Mythos 5)  
-**Fecha de Actualización:** 15 de Octubre de 2026  
+**Fecha de Actualización:** 28 de Octubre de 2026  
 
 ---
 
