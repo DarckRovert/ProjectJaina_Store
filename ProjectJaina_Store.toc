@@ -3,7 +3,6 @@
 ## Title: |cffd4af37Project Jaina|r - Tienda Mística de Dalaran
 ## Notes: Tienda oficial omnicanal in-game de Project JAIna. Consulta saldo de Tokens, adquiere monturas míticas, alas y transfiguración.
 ## Author: Darckrovert & Antigravity (Mythos 5)
-## Version: 4.0.0
 ## SavedVariables: ProjectJaina_Store_DB
 
 StoreCatalog.lua
