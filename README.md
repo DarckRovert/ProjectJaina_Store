@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="https://raw.githubusercontent.com/DarckRovert/ProjectJaina_Web/main/images/project_jaina_official_logo.jpg" alt="Project JAIna Official Crest" width="180">
+</p>
+
 # 🛍️ ProjectJaina_Store — AddOn Oficial de Tienda In-Game (WoW 3.3.5a)
 ## Interfaz de Comercio Cosmético Kirin Tor con Probador 3D y Despacho en Vivo
 
@@ -90,4 +94,5 @@ Los jugadores pueden alternar la visibilidad de la tienda mediante cualquiera de
 
 ## 🛡️ 6. Licencia y Cumplimiento
 
-Distribuido bajo la Licencia **MIT**. Cumple al 100% con la **Blizzard Custom UI Policy (2009)**. No comercializa ventajas competitivas ni altera mecánicas del núcleo del juego.
+Distribuido bajo la Licencia **MIT**. Cumple al 100% con la **Blizzard Custom UI Policy (2009)**. No comercializa ventajas competitivas ni altera mecánicas del núcleo del juego.
+
