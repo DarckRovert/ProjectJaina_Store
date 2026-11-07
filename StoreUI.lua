@@ -22,6 +22,13 @@ local state = {
     selectedItem = nil
 }
 
+-- Función auxiliar canónica anti-desincronización de locale para facción
+local function IsPlayerHorde()
+    if not UnitFactionGroup then return false end
+    local loc, eng = UnitFactionGroup("player")
+    return eng == "Horde" or loc == "Horda" or loc == "Horde"
+end
+
 -- =============================================================================
 -- COMUNICACIÓN DE RED (PJ_STORE)
 -- =============================================================================
@@ -265,16 +272,23 @@ function PJ:RefreshItemList()
             card:Show()
 
             -- Datos
+            local displayEntry = it.itemEntry
+            local displayName = it.name
             local itemTex = it.icon
-            if it.itemEntry and it.itemEntry > 0 then
-                local _, _, _, _, _, _, _, _, _, clientTex = GetItemInfo(it.itemEntry)
+            if displayEntry == 44413 and IsPlayerHorde() then
+                displayEntry = 41508
+                displayName = "Mecamoto de la Horda"
+            end
+
+            if displayEntry and displayEntry > 0 then
+                local _, _, _, _, _, _, _, _, _, clientTex = GetItemInfo(displayEntry)
                 if clientTex and clientTex ~= "" then
                     itemTex = clientTex
                 end
             end
             card.icon:SetTexture(itemTex or "Interface\\Icons\\INV_Misc_QuestionMark")
             local rData = PJ.Catalog.Rarities[it.rarity] or PJ.Catalog.Rarities.epico
-            card.name:SetText(string.format("|cff%s%s|r", rData.hex, it.name))
+            card.name:SetText(string.format("|cff%s%s|r", rData.hex, displayName))
             card.desc:SetText(it.description or "")
             card.iconBorder:SetVertexColor(rData.r, rData.g, rData.b, 0.8)
 
@@ -301,11 +315,19 @@ function PJ:RefreshItemList()
             card:SetScript("OnEnter", function(self)
                 self:SetBackdropBorderColor(1.0, 0.84, 0.0, 1.0)
                 GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-                if it.itemEntry and it.itemEntry > 0 then
-                    GameTooltip:SetHyperlink("item:" .. it.itemEntry)
+                local targetEntry = it.itemEntry
+                if targetEntry == 44413 and IsPlayerHorde() then
+                    targetEntry = 41508
+                end
+                if targetEntry and targetEntry > 0 then
+                    GameTooltip:SetHyperlink("item:" .. targetEntry)
                 else
                     local rData = PJ.Catalog.Rarities[it.rarity] or PJ.Catalog.Rarities.epico
-                    GameTooltip:SetText(it.name, rData.r, rData.g, rData.b)
+                    local targetName = it.name
+                    if it.itemEntry == 44413 and IsPlayerHorde() then
+                        targetName = "Mecamoto de la Horda"
+                    end
+                    GameTooltip:SetText(targetName, rData.r, rData.g, rData.b)
                     if it.description then
                         GameTooltip:AddLine(it.description, 1, 1, 1, true)
                     end
@@ -511,19 +533,33 @@ function PJ:PreviewItem(item)
 
         local rData = PJ.Catalog.Rarities[item.rarity] or PJ.Catalog.Rarities.epico
         local detailTex = item.icon
-        if item.itemEntry and item.itemEntry > 0 then
-            local _, _, _, _, _, _, _, _, _, clientTex = GetItemInfo(item.itemEntry)
+        local displayEntry = item.itemEntry
+        local displayName = item.name
+        if displayEntry == 44413 and IsPlayerHorde() then
+            displayEntry = 41508
+            displayName = "Mecamoto de la Horda"
+        end
+
+        if displayEntry and displayEntry > 0 then
+            local _, _, _, _, _, _, _, _, _, clientTex = GetItemInfo(displayEntry)
             if clientTex and clientTex ~= "" then
                 detailTex = clientTex
             end
         end
         detailIcon:SetTexture(detailTex or "Interface\\Icons\\INV_Misc_QuestionMark")
         detailIconBorder:SetVertexColor(rData.r, rData.g, rData.b, 0.9)
-        detailName:SetText(string.format("|cff%s%s|r", rData.hex, item.name))
+        detailName:SetText(string.format("|cff%s%s|r", rData.hex, displayName))
 
         if item.category == "mounts" then
-            detailCategory:SetText("|cff00e5ffMontura Mítica (Velocidad 310%)|r")
-            detailAttr:SetText(string.format("|cffffd700Hechizo:|r #%d\n|cffffd700Uso:|r Terrestre y Voladora\n|cffffd700Requisito:|r Nivel 80 (Artesano jinete)", item.spellId or 0))
+            local speedText = item.speed or "100%"
+            local rarityLabel = (rData and rData.label) or "ÉPICO"
+            detailCategory:SetText(string.format("|cff00e5ffMontura %s (Velocidad %s)|r", rarityLabel, speedText))
+
+            local mType = item.mountType or "Terrestre"
+            local reqLvl = item.reqLevel or 20
+            local reqSk = item.reqSkill or "Jinete (75)"
+            local spellId = (item.itemEntry == 44413 and IsPlayerHorde()) and 55531 or (item.spellId or 0)
+            detailAttr:SetText(string.format("|cffffd700Hechizo:|r #%d\n|cffffd700Uso:|r %s\n|cffffd700Requisito:|r Nivel %d (%s)", spellId, mType, reqLvl, reqSk))
         elseif item.category == "tokens" then
             detailCategory:SetText("|cff00e5ffTesoro & Divisa Soberana|r")
             detailAttr:SetText(string.format("|cffffd700Cantidad:|r %d unidades\n|cffffd700Destino:|r Bolsas de Inventario", item.itemCount or 1))
@@ -598,7 +634,11 @@ StaticPopupDialogs["PROJECT_JAINA_STORE_CONFIRM"] = {
 
 function PJ:ConfirmPurchase(item)
     if not item then return end
-    local dialog = StaticPopup_Show("PROJECT_JAINA_STORE_CONFIRM", item.name, item.costTokens, item)
+    local confirmName = item.name
+    if item.itemEntry == 44413 and IsPlayerHorde() then
+        confirmName = "Mecamoto de la Horda"
+    end
+    local dialog = StaticPopup_Show("PROJECT_JAINA_STORE_CONFIRM", confirmName, item.costTokens, item)
     if dialog then
         dialog.data = item
     end

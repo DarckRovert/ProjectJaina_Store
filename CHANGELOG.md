@@ -4,6 +4,16 @@ Todos los cambios notables de este proyecto están documentados en este archivo 
 
 ---
 
+## [4.1.0] — 2026-11-07
+### Dinamización de Atributos de Monturas y Adaptación Faccionaria Mecamoto (Horda)
+- **Inspección Mística Dinámica (`StoreUI.lua`):**
+  - Erradicado el texto hardcodeado fijo ("Mítica 310% / Terrestre y Voladora / Nivel 80").
+  - El panel ahora lee dinámicamente los campos reales del catálogo (`speed`, `mountType`, `reqLevel`, `reqSkill`).
+- **Adaptación Faccionaria Chopper / Mecamoto (`StoreUI.lua` & `66_StoreDeliveryEngine.lua`):**
+  - Implementada detección canónica de facción `IsPlayerHorde()` resiliente a locales (`esES`, `esMX`, `enUS`).
+  - Para jugadores de la Horda, el Chopper (44413) se sustituye automáticamente por la Mecamoto de la Horda (41508) en tarjeta, tooltip, preview y confirmación.
+  - Sincronizado `AUTHORITATIVE_CATALOG` en servidor incorporando el entry `41508` con tarifa autorizada de 3000 Tokens.
+
 ## [4.0.0] — 2026-10-28
 ### Lanzamiento Oficial v4.0.0 — Interfaz Kirin Tor Glassmorphism, Probador 3D y Despacho en Vivo
 - **Núcleo de Interfaz Gráfica (`StoreUI.lua`):**
