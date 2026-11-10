@@ -10,6 +10,10 @@ Thumbs.db
 **/SavedVariables/*.lua
 **/SavedVariables/*.lua.bak
 
+# Python bytecode y testing
+__pycache__/
+*.py[cod]
+
 # Archivos de empaquetado y releases
 *.zip
 *.tar.gz\n
