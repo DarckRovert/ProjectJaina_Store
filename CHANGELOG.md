@@ -4,6 +4,18 @@ Todos los cambios notables de este proyecto están documentados en este archivo 
 
 ---
 
+## [4.1.1] — 2026-11-22
+### Calentamiento WDB 3.3.5a, Preview/Compra Horda y Confirmación de Fichas (Hito #386)
+- **Adaptación Faccionaria Completa (`StoreUI.lua` & `66_StoreDeliveryEngine.lua`):**
+  - Centralizada `ResolveFactionItemEntry(entry)` (`44413 -> 41508` para Horda) aplicándola en `RefreshItemList`, `PreviewItem` y `StaticPopupDialogs["PROJECT_JAINA_STORE_CONFIRM"].OnAccept` (evita compras y previsualizaciones erróneas de Chopper Alianza por personajes Horda).
+  - Replicada la conversión faccionaria en `ProcessDeliveriesForPlayer` y en el sondeo offline `OnQueuePollTimer` en servidor (`characters.race IN (2, 5, 6, 8, 10)`).
+- **Compatibilidad Nativa WotLK 3.3.5a:**
+  - Erradicado el registro del evento inexistente en 3.3.5a `GET_ITEM_INFO_RECEIVED` (introducido en 4.0.1), reemplazándolo por calentamiento asíncrono WDB mediante `ProjectJaina_StoreCacheTooltip` + `RequestItemCacheWarmup(entry)` (reintento `0.6s`, máximo `3` intentos).
+- **Sincronización de Balance de Canje:**
+  - Añadido handler `TOKEN_REDEEM_OK:` en `CHAT_MSG_ADDON` (`PJ_STORE`) con recarga inmediata de saldo (`PJ:RequestBalance()`) y feedback sonoro.
+
+---
+
 ## [4.1.0] — 2026-11-07
 ### Dinamización de Atributos de Monturas y Adaptación Faccionaria Mecamoto (Horda)
 - **Inspección Mística Dinámica (`StoreUI.lua`):**

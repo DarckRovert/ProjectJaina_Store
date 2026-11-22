@@ -29,6 +29,13 @@ local function IsPlayerHorde()
     return eng == "Horde" or loc == "Horda" or loc == "Horde"
 end
 
+local function ResolveFactionItemEntry(entry)
+    if entry == 44413 and IsPlayerHorde() then
+        return 41508
+    end
+    return entry
+end
+
 -- =============================================================================
 -- COMUNICACIÓN DE RED (PJ_STORE)
 -- =============================================================================
@@ -196,6 +203,42 @@ scrollFrame:SetScrollChild(contentFrame)
 
 local itemCards = {}
 
+-- Warmup de caché WDB compatible con WotLK 3.3.5a (reemplaza el inexistente GET_ITEM_INFO_RECEIVED de Cataclysm)
+local cacheTooltip = CreateFrame("GameTooltip", "ProjectJaina_StoreCacheTooltip", UIParent, "GameTooltipTemplate")
+cacheTooltip:SetOwner(UIParent, "ANCHOR_NONE")
+local cacheRetries = {}
+local cacheRefreshQueued = false
+local cacheTimerFrame = CreateFrame("Frame")
+local cacheElapsed = 0
+
+local function RequestItemCacheWarmup(entry)
+    if not entry or entry <= 0 then return end
+    local count = cacheRetries[entry] or 0
+    if count >= 3 then return end
+    cacheRetries[entry] = count + 1
+    pcall(function()
+        cacheTooltip:SetOwner(UIParent, "ANCHOR_NONE")
+        cacheTooltip:SetHyperlink("item:" .. entry)
+    end)
+    if not cacheRefreshQueued then
+        cacheRefreshQueued = true
+        cacheElapsed = 0
+        cacheTimerFrame:SetScript("OnUpdate", function(self, dt)
+            cacheElapsed = cacheElapsed + dt
+            if cacheElapsed >= 0.6 then
+                self:SetScript("OnUpdate", nil)
+                cacheRefreshQueued = false
+                if frame:IsShown() then
+                    PJ:RefreshItemList()
+                    if state.selectedItem then
+                        PJ:PreviewItem(state.selectedItem)
+                    end
+                end
+            end
+        end)
+    end
+end
+
 local function CreateItemCard(index)
     local card = CreateFrame("Button", nil, contentFrame)
     card:SetSize(425, 78)
@@ -281,9 +324,11 @@ function PJ:RefreshItemList()
             end
 
             if displayEntry and displayEntry > 0 then
-                local _, _, _, _, _, _, _, _, _, clientTex = GetItemInfo(displayEntry)
+                local itemName, _, _, _, _, _, _, _, _, clientTex = GetItemInfo(displayEntry)
                 if clientTex and clientTex ~= "" then
                     itemTex = clientTex
+                elseif not itemName then
+                    RequestItemCacheWarmup(displayEntry)
                 end
             end
             card.icon:SetTexture(itemTex or "Interface\\Icons\\INV_Misc_QuestionMark")
@@ -506,8 +551,12 @@ function PJ:PreviewItem(item)
 
     -- Determinar si el objeto es equipable en el modelo 3D
     local isEquippable = false
-    if item.itemEntry and item.itemEntry > 0 then
-        local _, link, _, _, _, _, _, _, equipLoc = GetItemInfo(item.itemEntry)
+    local previewEntry = ResolveFactionItemEntry(item.itemEntry)
+    if previewEntry and previewEntry > 0 then
+        local itemName, link, _, _, _, _, _, _, equipLoc = GetItemInfo(previewEntry)
+        if not itemName then
+            RequestItemCacheWarmup(previewEntry)
+        end
         if equipLoc and equipLoc ~= "" and equipLoc ~= "INVTYPE_NON_EQUIP" then
             isEquippable = true
         end
@@ -519,7 +568,7 @@ function PJ:PreviewItem(item)
         resetBtn:Show()
         previewTitle:SetText("|cffd4af37Probador Místico 3D|r")
         pcall(function()
-            local _, link = GetItemInfo(item.itemEntry)
+            local _, link = GetItemInfo(previewEntry)
             if link then
                 model3D:TryOn(link)
             end
@@ -533,17 +582,18 @@ function PJ:PreviewItem(item)
 
         local rData = PJ.Catalog.Rarities[item.rarity] or PJ.Catalog.Rarities.epico
         local detailTex = item.icon
-        local displayEntry = item.itemEntry
+        local displayEntry = previewEntry
         local displayName = item.name
-        if displayEntry == 44413 and IsPlayerHorde() then
-            displayEntry = 41508
+        if item.itemEntry == 44413 and IsPlayerHorde() then
             displayName = "Mecamoto de la Horda"
         end
 
         if displayEntry and displayEntry > 0 then
-            local _, _, _, _, _, _, _, _, _, clientTex = GetItemInfo(displayEntry)
+            local itemName, _, _, _, _, _, _, _, _, clientTex = GetItemInfo(displayEntry)
             if clientTex and clientTex ~= "" then
                 detailTex = clientTex
+            elseif not itemName then
+                RequestItemCacheWarmup(displayEntry)
             end
         end
         detailIcon:SetTexture(detailTex or "Interface\\Icons\\INV_Misc_QuestionMark")
@@ -623,7 +673,7 @@ StaticPopupDialogs["PROJECT_JAINA_STORE_CONFIRM"] = {
     button2 = "Cancelar",
     OnAccept = function(self, data)
         if data then
-            PJ:BuyItem(data.itemEntry, data.costTokens)
+            PJ:BuyItem(ResolveFactionItemEntry(data.itemEntry), data.costTokens)
         end
     end,
     timeout = 0,
@@ -651,7 +701,6 @@ local eventFrame = CreateFrame("Frame")
 eventFrame:RegisterEvent("PLAYER_LOGIN")
 eventFrame:RegisterEvent("CHAT_MSG_ADDON")
 eventFrame:RegisterEvent("BAG_UPDATE")
-eventFrame:RegisterEvent("GET_ITEM_INFO_RECEIVED")
 
 eventFrame:SetScript("OnEvent", function(self, event, arg1, arg2, arg3, arg4)
     if event == "PLAYER_LOGIN" then
@@ -668,20 +717,6 @@ eventFrame:SetScript("OnEvent", function(self, event, arg1, arg2, arg3, arg4)
             state.tokens = t
             state.eventTokens = e
             PJ:UpdateBalanceDisplay()
-        end
-
-    elseif event == "GET_ITEM_INFO_RECEIVED" then
-        local itemID = arg1
-        if state.selectedItem and state.selectedItem.itemEntry == itemID then
-            PJ:PreviewItem(state.selectedItem)
-        end
-        for _, card in ipairs(itemCards) do
-            if card:IsShown() and card.itemData and card.itemData.itemEntry == itemID then
-                local _, _, _, _, _, _, _, _, _, clientTex = GetItemInfo(itemID)
-                if clientTex and clientTex ~= "" then
-                    card.icon:SetTexture(clientTex)
-                end
-            end
         end
 
     elseif event == "CHAT_MSG_ADDON" then
@@ -704,6 +739,10 @@ eventFrame:SetScript("OnEvent", function(self, event, arg1, arg2, arg3, arg4)
                 local reason = message:match("^BUY_FAIL:(.+)")
                 PlaySound("igQuestFailed")
                 UIErrorsFrame:AddMessage("|cffff2020[Tesorería]|r Error: " .. (reason or "Fallo en compra"), 1.0, 0.1, 0.1, 1.0, 4)
+
+            elseif message:find("^TOKEN_REDEEM_OK:") then
+                PJ:RequestBalance()
+                PlaySound("AuctionWindowOpen")
             end
         end
     end
